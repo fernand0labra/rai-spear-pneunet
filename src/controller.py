@@ -23,10 +23,10 @@ class SoftBodyController:
         self.deadband = 0.05
 
         # Four cavity pressures (order matches your description)
-        self.p_ul = 0.0  # upper left   (-x +z)
-        self.p_ur = 0.0  # upper right  (+x +z)
-        self.p_ll = 0.0  # lower left   (-x -z)
-        self.p_lr = 0.0  # lower right  (+x -z)
+        self.p1 = 0.0  # upper left   (+x +z)
+        self.p2 = 0.0  # upper right  (-x +z)
+        self.p3 = 0.0  # lower left   (+x -z)
+        self.p4 = 0.0  # lower right  (-x -z)
 
         # Single PID shared across all cavities
         self.pid = PID(kp, ki, kd)
@@ -36,20 +36,20 @@ class SoftBodyController:
 
         self.files_written = 1
         self.e_mag_array = [];  self.dp_total_array = []
-        self.p_ul_array = [];  self.p_ur_array = [];  self.p_ll_array = [];  self.p_lr_array = []
+        self.p1_array = [];  self.p2_array = [];  self.p3_array = [];  self.p4_array = []
 
     def calculate_pressure(self, current, target, dt):
         # Axis errors
         error_x = target[0] - current[0]
         error_z = target[2] - current[2]
 
-        # Four cavity "demands" (your required mapping)
-        e_ul = -error_x + error_z
-        e_ur = +error_x + error_z
-        e_ll = -error_x - error_z
-        e_lr = +error_x - error_z
+        # Four cavity "demands"
+        e_Q1 = -error_x-error_z
+        e_Q2 = +error_x-error_z
+        e_Q3 = -error_x+error_z
+        e_Q4 = +error_x+error_z
 
-        errs = np.array([e_ul, e_ur, e_ll, e_lr], dtype=float)
+        errs = np.array([e_Q1, e_Q2, e_Q3, e_Q4], dtype=float)
 
         # Deadband per cavity
         errs[np.abs(errs) < self.deadband] = 0.0
@@ -70,29 +70,29 @@ class SoftBodyController:
                     file_dp_total.write(f'{dp_total:.8f}\n')
                 file_dp_total.flush();  file_dp_total.close()
 
-                file_p_ul = open('./p_ul.txt', 'w')
-                for p_ul in self.p_ul_array:
-                    file_p_ul.write(f'{p_ul:.8f}\n')
-                file_p_ul.flush();  file_p_ul.close()
+                file_Q1 = open('./p1.txt', 'w')
+                for p1 in self.p1_array:
+                    file_Q1.write(f'{p1:.8f}\n')
+                file_Q1.flush();  file_Q1.close()
 
-                file_p_ur = open('./p_ur.txt', 'w')
-                for p_ur in self.p_ur_array:
-                    file_p_ur.write(f'{p_ur:.8f}\n')
-                file_p_ur.flush();  file_p_ur.close()
+                file_Q2 = open('./p2.txt', 'w')
+                for p2 in self.p2_array:
+                    file_Q2.write(f'{p2:.8f}\n')
+                file_Q2.flush();  file_Q2.close()
 
-                file_p_ll = open('./p_ll.txt', 'w')
-                for p_ll in self.p_ll_array:
-                    file_p_ll.write(f'{p_ll:.8f}\n')
-                file_p_ll.flush();  file_p_ll.close()
+                file_Q3 = open('./p3.txt', 'w')
+                for p3 in self.p3_array:
+                    file_Q3.write(f'{p3:.8f}\n')
+                file_Q3.flush();  file_Q3.close()
 
-                file_p_lr = open('./p_lr.txt', 'w')
-                for p_lr in self.p_lr_array:
-                    file_p_lr.write(f'{p_lr:.8f}\n')
-                file_p_lr.flush();  file_p_lr.close()
+                file_Q4 = open('./p4.txt', 'w')
+                for p4 in self.p4_array:
+                    file_Q4.write(f'{p4:.8f}\n')
+                file_Q4.flush();  file_Q4.close()
 
                 self.files_written = 0
 
-            return self.p_ul, self.p_ur, self.p_ll, self.p_lr
+            return self.p1, self.p2, self.p3, self.p4
 
         # One PID update: use overall error magnitude as the single scalar error
         # (keeps ONE integral + derivative state, as requested)
@@ -111,14 +111,14 @@ class SoftBodyController:
             dp = np.zeros(4, dtype=float)
 
         # Update and clamp pressures
-        self.p_ul = float(np.clip(self.p_ul + dp[0], self.p_min, self.p_max))
-        self.p_ur = float(np.clip(self.p_ur + dp[1], self.p_min, self.p_max))
-        self.p_ll = float(np.clip(self.p_ll + dp[2], self.p_min, self.p_max))
-        self.p_lr = float(np.clip(self.p_lr + dp[3], self.p_min, self.p_max))
+        self.p1 = float(np.clip(self.p1 + dp[3], self.p_min, self.p_max))
+        self.p2 = float(np.clip(self.p2 + dp[2], self.p_min, self.p_max))
+        self.p3 = float(np.clip(self.p3 + dp[1], self.p_min, self.p_max))
+        self.p4 = float(np.clip(self.p4 + dp[0], self.p_min, self.p_max))
 
-        self.p_ul_array.append(self.p_ul)
-        self.p_ur_array.append(self.p_ur)
-        self.p_ll_array.append(self.p_ll)
-        self.p_lr_array.append(self.p_lr)
+        self.p1_array.append(self.p1)
+        self.p2_array.append(self.p2)
+        self.p3_array.append(self.p3)
+        self.p4_array.append(self.p4)
 
-        return self.p_ul, self.p_ur, self.p_ll, self.p_lr
+        return self.p1, self.p2, self.p3, self.p4

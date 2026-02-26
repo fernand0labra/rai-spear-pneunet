@@ -18,15 +18,15 @@ class FingerController(Sofa.Core.Controller):
 
 		self.node = kwargs['node']
 		self.effector = kwargs['effector']
-		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([-16.0, 0.0, -13.0])   # upper left   (-x +z)
-		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([16.0, 0.0, -13.0])    # upper right  (+x +z)
-		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([-16.0, 0.0, -33.0])   # lower left   (-x -z)
-		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([16.0, 0.0, -33.0])    # lower right  (+x -z)
+		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([16.0, 0.0, -13.0])    # Q1  (+x +z)
+		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([-14.0, 0.0, -13.0])   # Q2   (-x +z)
+		# self.target = np.array([-1.0, -265.0, 0.0]) + np.array([16.0, 0.0, -33.0])    # Q3   (+x -z)
+		self.target = np.array([-1.0, -265.0, 0.0]) + np.array([-14.0, 0.0, -33.0])   # Q4   (-x -z)
 
 		self.time = 0.0
 		self.dt = self.node.dt.value
 
-		self.controller = SoftBodyController(kp=2e-6, ki=0.0, kd=0.0)
+		self.controller = SoftBodyController(kp=2e-6, ki=2e-8, kd=0.0)
 
 
 	def onAnimateBeginEvent(self,event):
@@ -34,13 +34,13 @@ class FingerController(Sofa.Core.Controller):
 
 		print(f'Position Target:\t[{self.target[0]:.5f}, {self.target[1]:.5f}, {self.target[2]:.5f}]')
 		print(f'Position Fingertip:\t[{self.effector[0][0]:.5f}, {self.effector[0][1]:.5f}, {self.effector[0][2]:.5f}]')
-		p_ll, p_lr, p_ul, p_ur = self.controller.calculate_pressure(np.array(self.effector[0]), self.target, self.dt)
-		print(f"Pressure values:\t[{p_ul:.5f}, {p_ur:.5f}, {p_ll:.5f}, {p_lr:.5f}]\n")
+		p1, p2, p3, p4 = self.controller.calculate_pressure(np.array(self.effector[0]), self.target, self.dt)
+		print(f"Pressure values:\t[{p1:.5f}, {p2:.5f}, {p3:.5f}, {p4:.5f}]\n")
 
-		self.node.finger1.cavity1.SurfaceForceField.value[0] = p_ul  	# upper left   (-x +z)
-		self.node.finger1.cavity2.SurfaceForceField.value[0] = p_ur  	# upper right  (+x +z)
-		self.node.finger1.cavity3.SurfaceForceField.value[0] = p_ll  	# lower left   (-x -z)
-		self.node.finger1.cavity4.SurfaceForceField.value[0] = p_lr     # lower right  (+x -z)
+		self.node.finger1.cavity1.SurfaceForceField.value[0] = p4  	# Q1 -> Q4 upper left   (+x +z)
+		self.node.finger1.cavity2.SurfaceForceField.value[0] = p3  	# Q2 -> Q3 upper right  (-x +z)
+		self.node.finger1.cavity3.SurfaceForceField.value[0] = p2  	# Q3 -> Q2 lower left   (+x -z)
+		self.node.finger1.cavity4.SurfaceForceField.value[0] = p1   # Q4 -> Q1 lower right  (-x -z)
 
 
 def createScene(rootNode):
