@@ -2,11 +2,10 @@
 
 This repository includes the SofaPython3 scene for the dynamic modelling of the Pneumatic Morphing Soft Quadrotor (PMSQ) and the associated code for its experimental validation.
 
-## Overview
-Click on the image for a better resolution.
+## Presentation Video
 
 <p align="center">
-  <img src="imgs/Figure1.png" style="width:50%; height:auto;"/>
+  <a href="https://youtu.be/Af-yoK9Lrk4?si=05sBjOd4gal4UtRG"><img width="844" height="470" alt="image" src="https://github.com/user-attachments/assets/d4a15a68-5260-4863-ada6-d69c4fba3443" /></a>
 </p>
 
 ## Citation
