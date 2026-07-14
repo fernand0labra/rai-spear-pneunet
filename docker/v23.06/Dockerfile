@@ -18,8 +18,9 @@ RUN apt-get update && \
           -DPLUGIN_CGALPLUGIN=ON \
           -DPLUGIN_BEAMADAPTER=ON \
           -DPLUGIN_COSSERAT=ON \
-          -DPLUGIN_SOFACUDA=ON \
+          -DPLUGIN_SOFACUDA=OFF \
           -DPLUGIN_MODELORDERREDUCTION=ON \
+          -DPLUGIN_MULTITHREADING=ON \
           -DPLUGIN_SOFAPYTHON3=ON \
           -DPLUGIN_SOFTROBOTS=ON \
           -DPLUGIN_SPLIB=ON \
@@ -27,5 +28,6 @@ RUN apt-get update && \
     cmake --build /sofa/build && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 
 WORKDIR /sofa

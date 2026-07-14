@@ -129,7 +129,7 @@ def createScene(rootNode):
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Collision.Response.Contact')
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
-	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Model') # Needed to use components [BilateralLagrangianConstraint]  
+	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Model') # Needed to use components [BilateralInteractionConstraint]
 	rootNode.addObject('RequiredPlugin', name='SoftRobots') # Needed to use components [SurfacePressureConstraint]  
 	rootNode.addObject('RequiredPlugin', name='MultiThreading')
 
@@ -147,7 +147,9 @@ def createScene(rootNode):
 
 	# Solvers and Loop
 	rootNode.addObject('FreeMotionAnimationLoop', parallelCollisionDetectionAndFreeMotion="0", parallelODESolving="0", computeBoundingBox="0")
-	rootNode.addObject('NNCGConstraintSolver', tolerance=1e-24, maxIterations=1000)
+	# v23.06: NNCGConstraintSolver (SoftRobots) does not exist yet; GenericConstraintSolver
+	# is the SOFA-core equivalent and accepts the same tolerance/maxIterations parameters.
+	rootNode.addObject('GenericConstraintSolver', tolerance=1e-24, maxIterations=1000)
 
 	###
 
@@ -166,7 +168,7 @@ def createScene(rootNode):
 	#finger.addObject('TetrahedronFEMForceField', name='FEM', src ='@topo', poissonRatio = 0.45, youngModulus = 0.6)
 	mu1 = 0.24203
 	lamb = 0
-	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="StableNeoHookean")
+	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="NeoHookean")
 	finger.addObject('LinearSolverConstraintCorrection')
 
 	# collision = finger.addChild('collision')
@@ -264,7 +266,7 @@ def createScene(rootNode):
 		'-120 0 5'	+'\n'	+'-120 0 -5'	+'\n'	+'-120 5 0'	+'\n'	+'-120 -5 0', translation = [0, -115, 0], rotation=[90, 0, 90])
 	constraint_spine.addObject('BarycentricMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'vincolo', template="Vec3d", object1 = "@finger1/constraint_finger/position", object2 = "@spine1/constraint_spine/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'vincolo', template="Vec3d", object1 = "@finger1/constraint_finger/position", object2 = "@spine1/constraint_spine/position",
 		first_point ="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19")
 

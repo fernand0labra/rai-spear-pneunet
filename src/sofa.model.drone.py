@@ -113,7 +113,8 @@ def createScene(rootNode):
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Collision.Response.Contact')
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Mapping.NonLinear')
 	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')
-	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Model') # Needed to use components [BilateralLagrangianConstraint]  
+	rootNode.addObject('RequiredPlugin', name='Sofa.Component.Constraint.Lagrangian.Model') # Needed to use components [BilateralInteractionConstraint]
+	rootNode.addObject('RequiredPlugin', name='MultiThreading') # Needed to use components [ParallelBVHNarrowPhase, ParallelBruteForceBroadPhase]
 	rootNode.addObject('RequiredPlugin', name='SoftRobots') # Needed to use components [SurfacePressureConstraint]  
 
 	# Visual
@@ -129,13 +130,16 @@ def createScene(rootNode):
 
 	# Solvers and Loop
 	rootNode.addObject('FreeMotionAnimationLoop', computeBoundingBox="0")
-	rootNode.addObject('NNCGConstraintSolver', tolerance=1e-24, maxIterations=1000)
+	# v23.06: NNCGConstraintSolver (SoftRobots) does not exist yet; GenericConstraintSolver
+	# is the SOFA-core equivalent and accepts the same tolerance/maxIterations parameters.
+	rootNode.addObject('GenericConstraintSolver', tolerance=1e-24, maxIterations=1000)
 
 	dronebox = rootNode.addChild('dronebox')
 	dronebox.addObject('EulerImplicitSolver', name='odesolver')
 	dronebox.addObject('SparseLDLSolver', name='linearSolver', template="CompressedRowSparseMatrixMat3x3d")
 	dronebox.addObject('MechanicalObject', template='Rigid3d')
 	dronebox.addObject('UniformMass', totalMass='1000e-6')
+	dronebox.addObject('FixedConstraint', indices=[0])  # Anchor the rigid hub in place (matches the world-fixed arm bases)
 	dronebox.addObject('LinearSolverConstraintCorrection')
 	
 	collision = dronebox.addChild('collision')
@@ -169,7 +173,7 @@ def createScene(rootNode):
 	#finger.addObject('TetrahedronFEMForceField', name='FEM', src ='@topo', poissonRatio = 0.45, youngModulus = 0.6)
 	mu1 = 0.24203
 	lamb = 0
-	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="StableNeoHookean")
+	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="NeoHookean")
 	finger.addObject('LinearSolverConstraintCorrection')
 
 	collision = finger.addChild('collision')
@@ -276,7 +280,7 @@ def createScene(rootNode):
 		'-120 0 5'+'\n'+'-120 0 -5'+'\n'+'-120 5 0'+'\n'+'-120 -5 0', translation = [0, -115, 0], rotation=[90, 0, 90])
 	constraint_spine.addObject('BarycentricMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_finger1_spine1', template="Vec3d", object1 = "@finger1/constraint_finger/position", object2 = "@spine1/constraint_spine1/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_finger1_spine1', template="Vec3d", object1 = "@finger1/constraint_finger/position", object2 = "@spine1/constraint_spine1/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19")
 
@@ -294,7 +298,7 @@ def createScene(rootNode):
 		'-8 -10 8'+'\n'+ '8 -10 8'+'\n'+'-8 -10 -2'+'\n'+'8 -10 -2', translation = [0, -255, 0], rotation=[0, 0, 0])
 	constraint_rotor.addObject('RigidMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_spine1_rotor1', template="Vec3d", object1 = "@spine1/constraint_spine2/position", object2 = "@rotor1/constraint_rotor/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_spine1_rotor1', template="Vec3d", object1 = "@spine1/constraint_spine2/position", object2 = "@rotor1/constraint_rotor/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11")
 
@@ -326,7 +330,7 @@ def createScene(rootNode):
 	#finger.addObject('TetrahedronFEMForceField', name='FEM', src ='@topo', poissonRatio = 0.45, youngModulus = 0.6)
 	mu1 = 0.24203
 	lamb = 0
-	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="StableNeoHookean")
+	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="NeoHookean")
 	finger.addObject('LinearSolverConstraintCorrection')
 
 	collision = finger.addChild('collision')
@@ -434,7 +438,7 @@ def createScene(rootNode):
 		'-120 0 5'+'\n'+'-120 0 -5'+'\n'+'-120 5 0'+'\n'+'-120 -5 0', translation = [115, 0, 0], rotation=[90, 0, 180])
 	constraint_spine.addObject('BarycentricMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_finger2_spine2', template="Vec3d", object1 = "@finger2/constraint_finger/position", object2 = "@spine2/constraint_spine1/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_finger2_spine2', template="Vec3d", object1 = "@finger2/constraint_finger/position", object2 = "@spine2/constraint_spine1/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19")
 
@@ -452,7 +456,7 @@ def createScene(rootNode):
 		'-8 -10 8'+'\n'+ '8 -10 8'+'\n'+'-8 -10 -2'+'\n'+'8 -10 -2', translation = [255, 0, 0], rotation=[0, 0, 90])
 	constraint_rotor.addObject('RigidMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_spine2_rotor2', template="Vec3d", object1 = "@spine2/constraint_spine2/position", object2 = "@rotor2/constraint_rotor/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_spine2_rotor2', template="Vec3d", object1 = "@spine2/constraint_spine2/position", object2 = "@rotor2/constraint_rotor/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11")
 
@@ -484,7 +488,7 @@ def createScene(rootNode):
 	#finger.addObject('TetrahedronFEMForceField', name='FEM', src ='@topo', poissonRatio = 0.45, youngModulus = 0.6)
 	mu1 = 0.24203
 	lamb = 0
-	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="StableNeoHookean")
+	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="NeoHookean")
 	finger.addObject('LinearSolverConstraintCorrection')
 
 	collision = finger.addChild('collision')
@@ -591,7 +595,7 @@ def createScene(rootNode):
 		'-120 0 5'+'\n'+'-120 0 -5'+'\n'+'-120 5 0'+'\n'+'-120 -5 0', translation = [0, 115, 0], rotation=[90, 0, 270])
 	constraint_spine.addObject('BarycentricMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_finger3_spine3', template="Vec3d", object1 = "@finger3/constraint_finger/position", object2 = "@spine3/constraint_spine1/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_finger3_spine3', template="Vec3d", object1 = "@finger3/constraint_finger/position", object2 = "@spine3/constraint_spine1/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19")
 
@@ -609,7 +613,7 @@ def createScene(rootNode):
 		'-8 -10 8'+'\n'+ '8 -10 8'+'\n'+'-8 -10 -2'+'\n'+'8 -10 -2', translation = [0, 255, 0], rotation=[0, 0, 180])
 	constraint_rotor.addObject('RigidMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_spine3_rotor3', template="Vec3d", object1 = "@spine3/constraint_spine2/position", object2 = "@rotor3/constraint_rotor/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_spine3_rotor3', template="Vec3d", object1 = "@spine3/constraint_spine2/position", object2 = "@rotor3/constraint_rotor/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11")
 
@@ -641,7 +645,7 @@ def createScene(rootNode):
 	#finger.addObject('TetrahedronFEMForceField', name='FEM', src ='@topo', poissonRatio = 0.45, youngModulus = 0.6)
 	mu1 = 0.24203
 	lamb = 0
-	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="StableNeoHookean")
+	finger.addObject('TetrahedronHyperelasticityFEMForceField', template='Vec3d', name='FEM', src ='@topo', ParameterSet=str(mu1)+' '+str(lamb),materialName="NeoHookean")
 	finger.addObject('LinearSolverConstraintCorrection')
 
 	collision = finger.addChild('collision')
@@ -748,7 +752,7 @@ def createScene(rootNode):
 		'-120 0 5'+'\n'+'-120 0 -5'+'\n'+'-120 5 0'+'\n'+'-120 -5 0', translation = [-115, 0, 0], rotation=[90, 0, 0])
 	constraint_spine.addObject('BarycentricMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_finger4_spine4', template="Vec3d", object1 = "@finger4/constraint_finger/position", object2 = "@spine4/constraint_spine1/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_finger4_spine4', template="Vec3d", object1 = "@finger4/constraint_finger/position", object2 = "@spine4/constraint_spine1/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19")
 
@@ -766,7 +770,7 @@ def createScene(rootNode):
 		'-8 -10 8'+'\n'+ '8 -10 8'+'\n'+'-8 -10 -2'+'\n'+'8 -10 -2', translation = [-255, 0, 0], rotation=[0, 0, 270])
 	constraint_rotor.addObject('RigidMapping')
 
-	rootNode.addObject('BilateralLagrangianConstraint', name = 'blc_spine3_rotor3', template="Vec3d", object1 = "@spine4/constraint_spine2/position", object2 = "@rotor4/constraint_rotor/position", 
+	rootNode.addObject('BilateralInteractionConstraint', name = 'blc_spine3_rotor3', template="Vec3d", object1 = "@spine4/constraint_spine2/position", object2 = "@rotor4/constraint_rotor/position", 
 		first_point="0 1 2 3 4 5 6 7 8 9 10 11", 
 		second_point="0 1 2 3 4 5 6 7 8 9 10 11")
 
